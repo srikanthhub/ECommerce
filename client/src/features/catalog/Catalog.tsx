@@ -1,18 +1,19 @@
+import { useEffect, useState } from "react";
 import {IProduct} from "../../app/models/product.types"
+import ProductList from "./ProductList";
 
-interface ICatalogProps {
-    products : IProduct[];
-    addProducts: ()=>void;
-}
 
-export default function Catalog({products, addProducts}: ICatalogProps) {
+export default function Catalog() {
+
+    const [products, setProducts] = useState<IProduct[]>([]);
+
+useEffect(()=> {
+  fetch('http://localhost:5000/api/products')
+  .then(response=>response.json())
+  .then(data=>setProducts(data))
+},[])
 
     return <>
-    <ul>
-              {products.map((product : IProduct) => (
-                <li key = {product.id}> {product.name} - {product.price} - {product.pictureUrl} - {product.brand}</li>
-              ))}
-          </ul>
-          <button onClick={addProducts}> Add Product</button>
+        <ProductList products={products}/>
     </>
 }
