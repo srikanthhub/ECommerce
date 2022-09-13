@@ -14,6 +14,9 @@ import { title } from "process";
 import { useState } from "react";
 import { NavLink } from "react-router-dom";
 
+import BasketPage from "../../features/basket/BaketPage";
+import { useStoreContext } from "../context/StoreContext";
+
 interface IHeaderProps {
   darkMode: boolean;
   handleThemeChange: () => void;
@@ -39,6 +42,9 @@ const navStyles = {
 };
 
 export default function Header({ darkMode, handleThemeChange }: IHeaderProps) {
+  const { basket } = useStoreContext();
+  const itemCount = basket?.items.reduce((sum, item) => sum + item.quantity, 0);
+
   return (
     <AppBar position="static" sx={{ mb: 4 }}>
       <Toolbar
@@ -70,8 +76,8 @@ export default function Header({ darkMode, handleThemeChange }: IHeaderProps) {
         </List>
 
         <Box display="flex" alignItems="center">
-          <IconButton size="large" sx={{ color: "inherit" }}>
-            <Badge badgeContent={4} color="secondary">
+          <IconButton href="/basket" size="large" sx={{ color: "inherit" }}>
+            <Badge badgeContent={itemCount} color="secondary">
               <ShoppingCart />
             </Badge>
           </IconButton>

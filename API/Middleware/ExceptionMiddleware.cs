@@ -29,7 +29,7 @@ namespace API.Middleware
 			{
 				await next(context);
 			}
-			catch(Exception ex)
+			catch (Exception ex)
 			{
 				logger.LogError(ex, ex.Message);
 				context.Response.ContentType = "application/json";

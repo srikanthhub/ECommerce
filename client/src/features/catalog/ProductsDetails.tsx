@@ -1,4 +1,5 @@
 import { LineAxisOutlined } from "@mui/icons-material";
+import { LoadingButton } from "@mui/lab";
 import {
   Divider,
   Grid,
@@ -7,33 +8,70 @@ import {
   TableCell,
   TableContainer,
   TableRow,
+  TextField,
   Typography,
 } from "@mui/material";
 import axios from "axios";
+import { removeListener } from "process";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
+import { idText } from "typescript";
 import agent from "../../app/api/agent";
+import { useStoreContext } from "../../app/context/StoreContext";
 import NotFound from "../../app/errors/NotFound";
 import LoadingComponent from "../../app/layout/LoadingComponent";
 import { IProduct } from "../../app/models/product.types";
 
 export default function ProductDetails() {
   const { id } = useParams<{ id: string }>();
+
+  const { basket, setBasket, removeItem } = useStoreContext();
   const [product, setProduct] = useState<IProduct | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [quantity, setQuantity] = useState(0);
+  const [submitting, setSubmitting] = useState(false);
+
+  const item = basket?.items.find((i) => i.productId === product?.id);
 
   useEffect(() => {
+    if (item) setQuantity(item.quantity);
+
     agent.Catalog.details(parseInt(id!))
       .then((product) => setProduct(product))
       .catch((error) => setError(error))
       .finally(() => setLoading(false));
-  }, [id]);
+  }, [id, item]);
 
+  function handleInputChange(event: any) {
+    if (event.target.value >= 0) {
+      setQuantity(event.target.value);
+    }
+  }
+
+  function handleUpdateCart() {
+    setSubmitting(true);
+
+    if (!item || quantity > item.quantity) {
+      const updatedQuantity = item ? quantity - item.quantity : quantity;
+      agent.Basket.addItem(product?.id!, updatedQuantity)
+        .then((basket) => setBasket(basket))
+        .finally(() => setSubmitting(false));
+    } else {
+      const updatedQuantity = item.quantity - quantity;
+
+      agent.Basket.removeItem(product?.id!, updatedQuantity)
+        .then(() => removeItem(product?.id!, updatedQuantity))
+        .finally(() => setSubmitting(false));
+    }
+  }
   if (loading)
     return <LoadingComponent message="Loading Product details page...." />;
+
   if (!product) return <NotFound />;
+
   if (error) return <h3> {error}</h3>;
+
   return (
     <Grid container spacing={3}>
       <Grid item xs={6}>
@@ -72,6 +110,33 @@ export default function ProductDetails() {
             </TableBody>
           </Table>
         </TableContainer>
+        <Grid container spacing={2}>
+          <Grid item xs={6}>
+            <TextField
+              onChange={handleInputChange}
+              variant="outlined"
+              type="number"
+              label="Quantity in Stock"
+              fullWidth
+              value={quantity}
+            />
+          </Grid>
+          <Grid item xs={6}>
+            <LoadingButton
+              disabled={
+                item?.quantity === quantity || (!item && quantity === 0)
+              }
+              onClick={handleUpdateCart}
+              sx={{ height: "55px" }}
+              color="primary"
+              size="large"
+              variant="contained"
+              fullWidth
+            >
+              {item ? "Update Quanty" : "Add to Cart"}
+            </LoadingButton>
+          </Grid>
+        </Grid>
       </Grid>
     </Grid>
   );
